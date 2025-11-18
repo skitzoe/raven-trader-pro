@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from ui.ui_prompt import *
 
+import requests
 import sys, getopt, argparse, json, time, getpass, os, os.path, webbrowser, logging
 from util import *
 
@@ -19,32 +20,32 @@ def test_rpc_status(first_launch=False):
     "but has not been configured in the settings for Raven-Trader-Pro.",
     "Settings file is located at: '{}'\r\n".format(AppInstance.settings.get_path()))
     return False
-  
+
   #Then do a basic test of RPC, also can check it is synced here
   chain_info = do_rpc("getblockchaininfo", log_error=False)
   #If the headers and blocks are not within 5 of each other,
   #then the chain is likely still syncing
   chain_updated = False if not chain_info else\
     (chain_info["headers"] - chain_info["blocks"]) < 5
-  
+
   if chain_info and chain_updated:
     #Determine if we are on testnet, and write back to settings.
     AppInstance.settings.rpc_set_testnet(chain_info["chain"] == "test")
     return True
   elif first_launch:
-    open_settings =  show_prompt("First Launch Detected", 
+    open_settings =  show_prompt("First Launch Detected",
     "First application launch detected.\r\n"+
     "Settings file is located at '{}'\r\n".format(AppInstance.settings.get_path())+
     "Would you like to open the settings file?")
     if open_settings == QMessageBox.Yes:
       open_file(AppInstance.settings.get_path())
   elif chain_info:
-    show_error("Sync Error", 
+    show_error("Sync Error",
     "Server appears to not be fully synchronized. Must be at the latest tip to continue.",
     "Network: {}\r\nCurrent Headers: {}\r\nCurrent Blocks: {}".format(chain_info["chain"], chain_info["headers"], chain_info["blocks"]))
   else:
-    show_error("Error connecting", 
-    "Error connecting to RPC server.\r\n{}".format(AppInstance.settings.rpc_url()), 
+    show_error("Error connecting",
+    "Error connecting to RPC server.\r\n{}".format(AppInstance.settings.rpc_url()),
     "Settings file is located at: '{}'\r\n".format(AppInstance.settings.get_path())+
     "Close app when editing settings file!\r\n\r\n"+
     "Make sure the following configuration variables are in your raven.conf file"+
@@ -65,7 +66,7 @@ def do_rpc(method, log_error=True, **kwargs):
       except:
         return None
     return json.loads(resp.text)["result"]
-  except TimeoutError:
+  except requests.exceptions.Timeout:
     if log_error:
       #Any RPC timeout errors are totally fatal
       logging.error("RPC Timeout")
@@ -139,5 +140,5 @@ def asset_details(asset_name):
   details = do_rpc("getassetdata", asset_name=asset_name)
   return (admin, details)
 
-  
+
 from app_instance import AppInstance
