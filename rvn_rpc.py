@@ -67,16 +67,13 @@ def do_rpc(method, log_error=True, **kwargs):
     return json.loads(resp.text)["result"]
   except TimeoutError:
     if log_error:
-      #Any RPC timeout errors are totally fatal
       logging.error("RPC Timeout")
-      AppInstance.on_exit()
-      show_error("RPC Timeout", "Timeout contacting RPC")
-      exit(-1)
+      show_error("RPC Timeout", "Timeout contacting RPC. Please check your connection or wallet status.")
       return None
     else:
       return None
   except Exception as ex:
-    logging.error(ex)
+    logging.error(f"RPC Error: {ex}", exc_info=True)
     return None
 
 def decode_full(txid):
