@@ -51,6 +51,11 @@ class MainWindow(QMainWindow):
     self.updateTimer.start(self.settings.read("update_interval"))
 
     self.menu_context = {"type": None, "data": None}
+
+    # Setup System Tray Icon
+    self.tray_icon = QSystemTrayIcon(self)
+    self.tray_icon.setIcon(self.windowIcon())
+    self.tray_icon.show()
     self.actionRefresh.trigger()
 
 #
@@ -66,7 +71,7 @@ class MainWindow(QMainWindow):
       hex = hex.strip('/') #strip any leading/traind /'s
       if re.search("^[0-9a-fA-F]*$", hex):
         self.complete_order(hex_prefill=hex)
-      else:  
+      else:
         logging.warn("Unknown format: {} attempted".format(uri))
     else:
       logging.warn("Unknown handle: {} attempted. Expected {}://<signed partial hex>".format(uri, self.settings.protocol_path()))
@@ -172,13 +177,13 @@ class MainWindow(QMainWindow):
     if self.menu_context["type"] != "order":
       return
     self.view_order_details(self.menu_context["data"])
-    
+
   def trade_double_clicked(self, row_widget):
     list = row_widget.listWidget()
     row = list.itemWidget(row_widget)
     self.menu_context = { "type": "trade", "data": row.get_data()}
     self.action_view_trade(force=False)
-    
+
   def order_double_clicked(self, row_widget):
     list = row_widget.listWidget()
     row = list.itemWidget(row_widget)
@@ -216,7 +221,7 @@ class MainWindow(QMainWindow):
     if len(trade.transactions) == 0:
       show_error("No trades to publish.")
       return
-    
+
     confirm_diag = show_prompt("Send Orders?", "Confirm post {} trades to server?".format(len(trade.order_utxos)))
     if confirm_diag == QMessageBox.Yes:
       posted = 0
@@ -246,7 +251,7 @@ class MainWindow(QMainWindow):
     menu.addAction(self.actionNewTrade)
     self.menu_context = { "type": "asset", "data": asset }
     action = menu.exec_(widget_inner.mapToGlobal(click_position))
-    
+
   def open_trade_menu(self, list, list_item, click_position, trade):
     menu = QMenu()
     widget_inner = list.itemWidget(list_item)
@@ -316,7 +321,7 @@ class MainWindow(QMainWindow):
         sent_txid = self.preview_complete(finished_swap, "Confirm Transaction [2/2]")
         if sent_txid:
           self.wallet.swap_executed(partial_swap, sent_txid)
-          
+
   def execute_server_orders(self, orders):
     orders_hex = [b64_to_hex(order["b64SignedPartial"]) for order in orders if "b64SignedPartial" in order]
     if len(orders_hex) == 1:
@@ -328,7 +333,7 @@ class MainWindow(QMainWindow):
       composite_trade = SwapTransaction.composite_transactions(parsed_orders)
       logging.info(parsed_orders)
       logging.info(composite_trade)
-  
+
   def preview_complete(self, raw_tx, message, swap=None):
     preview_dialog = PreviewTransactionDialog(swap, raw_tx, preview_title=message, parent=self)
     if preview_dialog.exec_():
@@ -380,10 +385,12 @@ class MainWindow(QMainWindow):
 
   def completed_trade_mempool(self, transaction, order):
     logging.info("Trade Mempool Confirmed")
+    self.show_notification("Trade Executed", "A trade has been executed and is pending in the mempool.")
     self.actionRefresh.trigger()
 
   def completed_trade_network(self, transaction, order):
     logging.info("Trade Final Confirm")
+    self.show_notification("Trade Confirmed", "A trade has been fully confirmed on the network.")
     self.actionRefresh.trigger()
 
   def setup_mempool_confirmed(self, transaction, trade):
@@ -400,6 +407,10 @@ class MainWindow(QMainWindow):
     self.actionRefresh.trigger()
 
 #
+  def show_notification(self, title, message):
+    if self.tray_icon.isVisible():
+      self.tray_icon.showMessage(title, message, QSystemTrayIcon.Information, 3000)
+
 # Dynamic Menu Items
 #
 
@@ -505,7 +516,7 @@ class MainWindow(QMainWindow):
 
     list_widget.setContextMenuPolicy(Qt.CustomContextMenu)
     list_widget.customContextMenuRequested.connect(lambda pt: fn_context_menu(list, list_item, pt, widget_data))
-    
+
     if not existing:
       list.addItem(list_item)
 
