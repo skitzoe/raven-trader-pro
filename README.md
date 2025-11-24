@@ -8,15 +8,18 @@ The first and (currently) only integrated application for creating asset buy, se
 ![image](https://user-images.githubusercontent.com/793454/121434638-9f766a00-c94b-11eb-9bec-dff2b562f53a.png)
 
 Setup:
-- Install Python 3.7 & PIP
-- Windows: `pip install -r requirements.txt` 
-- Linux: `python3.7 -m pip install -r requirements.txt`
+- Install Python 3.7 or greater (Tested on 3.12) & PIP
+- Windows: `pip install -r requirements.txt`
+- Linux: `python3 -m pip install -r requirements.txt`
 - Make sure [raven core wallet](https://github.com/Ravenqt-RVN-SIG/Ravencoin/) is running with the following `raven.conf` variables
 - Run the app once and then edit the config files in `~/.raventrader/settings.json` as needed to connect to RPC
 
+Testing:
+- Run unit tests with `pytest` or `python3 -m pytest`
+
 Running:
 - Windows: `python main.py`
-- Linux: `python3.7 main.py`
+- Linux: `python3 main.py`
 
 ## raven.conf Variables ##
 ```
@@ -75,8 +78,8 @@ rpcpassword=<password>
 
 ## TODO ##
 
-- [ ] System notification on completed trade
-- [ ] Proxy asset signing/reissuing. (Party `A` owns admin asset, Party `B` requests a child asset be minted/reissued/etc under `A`'s admin asset.) From the creators side, this just looks like a buy order for an asset that doesn't exist yet. 
+- [x] System notification on completed trade
+- [ ] Proxy asset signing/reissuing. (Party `A` owns admin asset, Party `B` requests a child asset be minted/reissued/etc under `A`'s admin asset.) From the creators side, this just looks like a buy order for an asset that doesn't exist yet.
 - [x] Proper asset decimal/metadata support. (close enough)
 - [ ] Available UTXO dialog (with option to manually lock/unlock? UTXO's.)
 - [x] Settings menu
